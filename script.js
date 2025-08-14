@@ -16,52 +16,106 @@ for (let y = 0; y < rivit; y++) {
     grid.push(rivi);
 }
 
-// pelaajan aloitus paikka
-
+// pelaajan aloituspaikka
 let pelaajaX = Math.floor(Math.random() * (10) + 5);
 let pelaajaY = Math.floor(Math.random() * (10) + 5);
+grid[pelaajaY][pelaajaX] = 2;
 
-grid[pelaajaX][pelaajaY] = 2;
+// omenan sijoitus
+let omenaX, omenaY;
+do {
+    omenaX = Math.floor(Math.random() * columnit);
+    omenaY = Math.floor(Math.random() * rivit);
+} while (omenaX === pelaajaX && omenaY === pelaajaY);
+grid[omenaY][omenaX] = 1;
 
-//omenan sijoitus
+// Pisteet
+let pisteet = 0;
 
-let omenaX = Math.floor(Math.random() * (20));
-let omenaY = Math.floor(Math.random() * (20));
+// Madon liikesuunta (dx, dy)
+let suuntaX = 1; // oikea
+let suuntaY = 0; // ei y-suunnassa
 
-grid[omenaX][omenaY] = 1;
+// Kuunnellaan näppäimistöä suunnan vaihtamiseksi
+window.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowUp" && suuntaY === 0) {
+        suuntaX = 0; suuntaY = -1;
+    }
+    if (e.key === "ArrowDown" && suuntaY === 0) {
+        suuntaX = 0; suuntaY = 1;
+    }
+    if (e.key === "ArrowLeft" && suuntaX === 0) {
+        suuntaX = -1; suuntaY = 0;
+    }
+    if (e.key === "ArrowRight" && suuntaX === 0) {
+        suuntaX = 1; suuntaY = 0;
+    }
+});
 
-
-
-function draw(){
+function draw() {
     const canvas = document.getElementById("canvas");
     if (canvas.getContext) {
         const ctx = canvas.getContext("2d");
 
+        // tausta
         ctx.fillStyle = "rgb(50 50 50)";
-        ctx.fillRect(0, 500, 500, 100);
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
 
         for (let y = 0; y < rivit; y++) {
             for (let x = 0; x < columnit; x++) {
                 let valittuRuutu = grid[y][x];
 
-                // asetetaan ruutu tilan mukaa
-                if (valittuRuutu === 0) {
-                    ctx.fillStyle = "green";
-                } else if (valittuRuutu === 1) {
-                    ctx.fillStyle = "red";
-                } else if (valittuRuutu === 2) {
-                    ctx.fillStyle = "blue";
-                }
+                if (valittuRuutu === 0) ctx.fillStyle = "green";
+                else if (valittuRuutu === 1) ctx.fillStyle = "red";
+                else if (valittuRuutu === 2) ctx.fillStyle = "blue";
 
-                // Piirretään ruutu
                 ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
-
-                // ruudukon viivat
                 ctx.strokeStyle = "black";
                 ctx.strokeRect(x * cellSize, y * cellSize, cellSize, cellSize);
             }
         }
+
+        // näytetään pisteet
+        ctx.fillStyle = "white";
+        ctx.font = "20px Arial";
+        ctx.fillText("Pisteet: " + pisteet, 10, canvas.height - 10);
     }
-    
 }
-window.addEventListener("load", draw);
+
+// Pelin päivitysfunktio
+function update() {
+    // poistetaan pelaaja vanhasta ruudusta
+    grid[pelaajaY][pelaajaX] = 0;
+
+    // päivitetään madon sijainti
+    pelaajaX += suuntaX;
+    pelaajaY += suuntaY;
+
+    // ruutujen rajat (pelin loppu, jos osuu seinään)
+    if (pelaajaX < 0) pelaajaX = 0;
+    if (pelaajaX > columnit - 1) pelaajaX = columnit - 1;
+    if (pelaajaY < 0) pelaajaY = 0;
+    if (pelaajaY > rivit - 1) pelaajaY = rivit - 1;
+
+    // tarkistetaan osuiko omenaa
+    if (pelaajaX === omenaX && pelaajaY === omenaY) {
+        pisteet++;
+        // Luo uusi omena tyhjään ruutuun
+        do {
+            omenaX = Math.floor(Math.random() * columnit);
+            omenaY = Math.floor(Math.random() * rivit);
+        } while (grid[omenaY][omenaX] !== 0);
+        grid[omenaY][omenaX] = 1;
+    }
+
+    // asetetaan pelaaja uuteen ruutuun
+    grid[pelaajaY][pelaajaX] = 2;
+
+    draw();
+    setTimeout(update, 200);
+}
+
+// Käynnistys
+window.addEventListener("load", () => {
+    update();
+});
