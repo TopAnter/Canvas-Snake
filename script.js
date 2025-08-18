@@ -16,9 +16,11 @@ for (let y = 0; y < rivit; y++) {
     grid.push(rivi);
 }
 
-// pelaajan aloituspaikka
+// madon osat taulukossa (alkuun vain yksi pätkä)
+let mato = [];
 let pelaajaX = Math.floor(Math.random() * (10) + 5);
 let pelaajaY = Math.floor(Math.random() * (10) + 5);
+mato.push({x: pelaajaX, y: pelaajaY});
 grid[pelaajaY][pelaajaX] = 2;
 
 // omenan sijoitus
@@ -84,32 +86,46 @@ function draw() {
 
 // Pelin päivitysfunktio
 function update() {
-    // poistetaan pelaaja vanhasta ruudusta
-    grid[pelaajaY][pelaajaX] = 0;
+    // madon pää
+    let head = {x: mato[0].x + suuntaX, y: mato[0].y + suuntaY};
 
-    // päivitetään madon sijainti
-    pelaajaX += suuntaX;
-    pelaajaY += suuntaY;
+    // rajat (seinään törmäys = peli loppuu)
+    if (head.x < 0 || head.x >= columnit || head.y < 0 || head.y >= rivit) {
+        alert("Peli ohi! Pisteet: " + pisteet);
+        return;
+    }
 
-    // ruutujen rajat (pelin loppu, jos osuu seinään)
-    if (pelaajaX < 0) pelaajaX = 0;
-    if (pelaajaX > columnit - 1) pelaajaX = columnit - 1;
-    if (pelaajaY < 0) pelaajaY = 0;
-    if (pelaajaY > rivit - 1) pelaajaY = rivit - 1;
+    // osuuko omaan häntään
+    for (let osa of mato) {
+        if (osa.x === head.x && osa.y === head.y) {
+            alert("Peli ohi! Pisteet: " + pisteet);
+            return;
+        }
+    }
 
-    // tarkistetaan osuiko omenaa
-    if (pelaajaX === omenaX && pelaajaY === omenaY) {
+    // lisätään uusi pää taulukkoon
+    mato.unshift(head);
+
+    // osuuko omenaa
+    if (head.x === omenaX && head.y === omenaY) {
         pisteet++;
-        // Luo uusi omena tyhjään ruutuun
+        // uusi omena
         do {
             omenaX = Math.floor(Math.random() * columnit);
             omenaY = Math.floor(Math.random() * rivit);
         } while (grid[omenaY][omenaX] !== 0);
         grid[omenaY][omenaX] = 1;
+        // (EI poisteta häntää → mato kasvaa)
+    } else {
+        // poistetaan häntä jos ei syö omenaa
+        let tail = mato.pop();
+        grid[tail.y][tail.x] = 0;
     }
 
-    // asetetaan pelaaja uuteen ruutuun
-    grid[pelaajaY][pelaajaX] = 2;
+    // päivitetään ruudukko madon osille
+    for (let osa of mato) {
+        grid[osa.y][osa.x] = 2;
+    }
 
     draw();
     setTimeout(update, 200);
